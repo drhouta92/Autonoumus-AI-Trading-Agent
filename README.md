@@ -60,7 +60,7 @@ Each discovered stock is scored using a **composite ranking system**:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/autonomous-trading-agent.git
+git clone https://github.com/drhouta92/autonomous-trading-agent.git
 cd autonomous-trading-agent
 
 # Install dependencies
