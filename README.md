@@ -1,78 +1,124 @@
-Truly Autonomous AI Trading Agent with Learning
-This project is an advanced AI agent designed to autonomously discover, analyze, and rank stock trading opportunities. Unlike traditional systems that rely on static watchlists, this agent builds its own universe of stocks from scratch, learns from historical performance, and adapts its strategy over time.
 
-Key Features
-Autonomous Discovery: The agent builds its stock universe by scraping major indices, ETFs, news sites, and trending tickers. It uses a weighted system for discovery methods that is updated based on historical performance.
 
-Multi-Factor Analysis: Each discovered stock is analyzed based on a composite score that considers multiple factors, including:
+# 🧠 Truly Autonomous AI Trading Agent with Learning
 
-Catalyst Detection: The CatalystDetector module analyzes news sentiment and detects volume anomalies to identify potential market catalysts.
+An advanced **AI-driven trading agent** that autonomously discovers, analyzes, and ranks stock opportunities. Unlike traditional systems that depend on static watchlists, this agent dynamically builds its own universe of stocks, **learns from historical outcomes**, and continuously adapts its strategy with **reinforcement learning**.
 
-Technical Analysis: The system analyzes various technical indicators like RSI, MACD, and moving averages.
+---
 
-Fundamental Data: It fetches key fundamental data such as P/E ratio, Beta, and market capitalization.
+## ✨ Key Features
 
-Adaptive Learning: The agent incorporates two learning mechanisms to improve its performance:
+### 🚀 Autonomous Discovery
 
-Stock Learner: A component that remembers past discoveries and learns from their performance over time by adjusting scoring weights.
+* Builds a **dynamic stock universe** from scratch.
+* Sources symbols from indices, ETFs, trending tickers, and financial news.
+* Uses a **weighted discovery system**, updated based on past performance.
 
-Reinforcement Learning: A Q-learning model that learns to rank opportunities and adjusts the agent's confidence threshold based on the success or failure of previous trades.
+### 📊 Multi-Factor Analysis
 
-Robust Data Fetching: The DataFetcher module aggregates data from multiple APIs, including Finnhub, Alpha Vantage, Polygon, and yfinance, with built-in fallbacks.
+Each discovered stock is scored using a **composite ranking system**:
 
-Comprehensive Risk Management: The RiskManager module calculates appropriate position sizes, stop-loss, and take-profit levels using configurable methods like fixed fractional or volatility-adjusted approaches.
+* **Catalyst Detection** → Sentiment analysis + volume anomaly detection.
+* **Technical Analysis** → Indicators like RSI, MACD, SMA/EMA crossovers.
+* **Fundamental Data** → Ratios, beta, and market cap integration.
 
-How It Works
-The agent follows a systematic, automated workflow:
+### 🧩 Adaptive Learning
 
-Initialize Components: The main.py script initializes all modules, including DataFetcher, TechnicalAnalyzer, CatalystDetector, RiskManager, and AutonomousDiscovery.
+* **Stock Learner** → Remembers past stock outcomes, dynamically adjusts scoring weights.
+* **Reinforcement Learner (Q-Learning)** → Learns to rank trade opportunities, adapts confidence thresholds based on trade success/failure.
 
-Discover Stock Universe: The AutonomousDiscovery module builds a fresh list of symbols to analyze, incorporating learning from previously discovered stocks saved in historical_stocks.json and stock_performance.json.
+### 🔗 Robust Data Fetching
 
-Analyze Opportunities: The agent iterates through the discovered symbols, fetching data and calculating an overall score for each based on momentum, catalysts, and other factors.
+* Aggregates from **Finnhub, Alpha Vantage, Polygon, yfinance**.
+* Built-in **failover** mechanisms to ensure uninterrupted data flow.
 
-Rank and Select: The ReinforcementLearner module uses its Q-table to rank the analyzed opportunities, providing a final, learned recommendation.
+### 🛡 Comprehensive Risk Management
 
-Output Analysis: The main.py script then presents a summary of the best opportunities by category, such as highest score, best momentum, and best catalysts.
+* Calculates **position sizes, stop-loss, and take-profit** levels.
+* Supports both **fixed fractional** and **volatility-adjusted** methods.
 
-Quick Start Guide
-Prerequisites
-Python 3.x
+---
 
-Required libraries (see requirements.txt which would be included in the project): pandas, numpy, yfinance, requests, bs4, joblib.
+## ⚙️ How It Works
 
-API keys for Finnhub, Alpha Vantage, and Polygon (configured in config.py).
+1. **Initialize Components** → Launches all modules (`DataFetcher`, `CatalystDetector`, `TechnicalAnalyzer`, etc.).
+2. **Discover Stock Universe** → Fresh symbols generated + historical learning applied.
+3. **Analyze Opportunities** → Multi-factor scoring across momentum, catalysts, fundamentals.
+4. **Rank & Select** → Q-learning ranks opportunities with dynamic thresholds.
+5. **Output Analysis** → Returns top-ranked stocks with categories (highest score, best momentum, strongest catalysts).
 
-Installation and Usage
-Clone the repository.
+---
 
-Install dependencies: pip install -r requirements.txt
+## 🛠 Quick Start
 
-Add your API keys to config.py.
+### Prerequisites
 
-Run the main script from your terminal: python main.py
+* Python **3.x**
+* API keys for: **Finnhub, Alpha Vantage, Polygon**
 
-The agent will begin its autonomous discovery and analysis process, with results printed to the console.
+### Installation
 
-File Structure
-main.py: The main entry point for the application.
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/autonomous-trading-agent.git
+cd autonomous-trading-agent
 
-autonomous_discovery.py: Handles the discovery and generation of the stock universe.
+# Install dependencies
+pip install -r requirements.txt
 
-data_fetcher.py: Manages all data retrieval from various APIs.
+# Add your API keys
+nano config.py
+```
 
-catalyst_detector.py: Focuses on analyzing news sentiment and volume anomalies.
+### Usage
 
-technical_analyzer.py: Analyzes technical indicators and patterns.
+```bash
+python main.py
+```
 
-stock_learner.py: Implements a learning mechanism that adjusts scoring weights based on historical performance.
+Results will be displayed in the console, grouped by **category and ranking**.
 
-reinforcement_learner.py: Implements a Q-learning model for ranking opportunities and adapting the overall strategy.
+---
 
-risk_manager.py: Contains logic for calculating position sizes and managing risk.
+## 📂 File Structure
 
-config.py: Configuration file for API keys and analysis parameters.
+```
+├── main.py                  # Main entry point
+├── autonomous_discovery.py  # Stock discovery engine
+├── data_fetcher.py          # Data retrieval + API integrations
+├── catalyst_detector.py     # Sentiment + volume anomaly detection
+├── technical_analyzer.py    # Technical indicators analysis
+├── stock_learner.py         # Adaptive learning for scoring
+├── reinforcement_learner.py # Q-learning ranking system
+├── risk_manager.py          # Position sizing & risk control
+├── config.py                # API keys & parameters
+├── historical_stocks.json   # Persistent stock universe
+├── stock_performance.json   # Past performance database
+└── requirements.txt         # Python dependencies
+```
 
-historical_stocks.json: Stores a history of discovered symbols.
+---
 
-stock_performance.json: Stores performance data for discovered stocks.
+## 📈 Example Output
+
+```
+📊 Top Opportunities:
+
+1️⃣ Highest Score → AAPL (Momentum + Catalyst Alignment)
+2️⃣ Best Momentum → TSLA (Strong RSI + EMA Crossover)
+3️⃣ Strongest Catalyst → NVDA (News Sentiment Surge + Volume Spike)
+```
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss your ideas.
+
+---
+
+## ⚠️ Disclaimer
+
+This project is for **educational and research purposes only**.
+It is **not financial advice**. Use at your own risk.
+
