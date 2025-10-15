@@ -10,10 +10,75 @@ import time
 import random
 import os
 import json
+import threading
 from data_fetcher import DataFetcher
 from technical_analyzer import TechnicalAnalyzer
 from catalyst_detector import CatalystDetector
 from risk_manager import RiskManager
+
+
+class ProgressTracker:
+    """
+    Track symbol progression through evaluation gates with pass/fail statistics
+    """
+    def __init__(self):
+        self.gates = {
+            'G1': {'name': 'Symbol Discovery', 'total': 0, 'passed': 0, 'failed': 0},
+            'G2': {'name': 'Fundamental Data', 'total': 0, 'passed': 0, 'failed': 0},
+            'G3': {'name': 'Price Validation', 'total': 0, 'passed': 0, 'failed': 0},
+            'G4': {'name': 'Historical Data', 'total': 0, 'passed': 0, 'failed': 0},
+            'G5': {'name': 'Technical Analysis', 'total': 0, 'passed': 0, 'failed': 0},
+            'G6': {'name': 'Catalyst Analysis', 'total': 0, 'passed': 0, 'failed': 0},
+            'G7': {'name': 'Volume Analysis', 'total': 0, 'passed': 0, 'failed': 0},
+            'G8': {'name': 'Score Calculation', 'total': 0, 'passed': 0, 'failed': 0},
+            'G9': {'name': 'Risk Assessment', 'total': 0, 'passed': 0, 'failed': 0},
+            'G10': {'name': 'Final Position', 'total': 0, 'passed': 0, 'failed': 0},
+        }
+        self.lock = threading.Lock()
+    
+    def record_gate(self, gate_id: str, passed: bool):
+        """Record a symbol's result at a gate"""
+        with self.lock:
+            if gate_id in self.gates:
+                self.gates[gate_id]['total'] += 1
+                if passed:
+                    self.gates[gate_id]['passed'] += 1
+                else:
+                    self.gates[gate_id]['failed'] += 1
+    
+    def render_progress_bars(self):
+        """Render progress bars showing gate statistics"""
+        print("\n" + "="*80)
+        print("EVALUATION PIPELINE PROGRESS")
+        print("="*80)
+        
+        for gate_id in sorted(self.gates.keys()):
+            gate = self.gates[gate_id]
+            name = gate['name']
+            total = gate['total']
+            passed = gate['passed']
+            failed = gate['failed']
+            
+            if total == 0:
+                # No symbols have reached this gate yet
+                print(f"{gate_id} {name:20s} | 0.0% waiting...")
+            else:
+                pass_rate = (passed / total * 100) if total > 0 else 0
+                fail_rate = (failed / total * 100) if total > 0 else 0
+                
+                # Create visual bar
+                bar_length = 40
+                passed_bar = int(pass_rate / 100 * bar_length)
+                failed_bar = int(fail_rate / 100 * bar_length)
+                remaining_bar = bar_length - passed_bar - failed_bar
+                
+                bar = '█' * passed_bar + '▓' * failed_bar + '░' * remaining_bar
+                
+                print(f"{gate_id} {name:20s} | {bar} | " +
+                      f"Total: {total:4d} Pass: {passed:4d} ({pass_rate:5.1f}%) " +
+                      f"Fail: {failed:4d} ({fail_rate:5.1f}%)")
+        
+        print("="*80 + "\n")
 
 class AutonomousDiscovery:
     def __init__(self, config):
@@ -32,6 +97,7 @@ class AutonomousDiscovery:
         }
         self.historical_data_path = "historical_stocks.json"
         self.performance_history_path = "stock_performance.json"
+        self.progress_tracker = ProgressTracker()
         
     def discover_symbols_from_scratch(self) -> Set[str]:
         """
@@ -585,13 +651,23 @@ class AutonomousDiscovery:
         # Apply learned insights to adjust evaluation criteria
         self._adjust_evaluation_criteria_from_learning(performance_data)
         
+        # Reset progress tracker
+        self.progress_tracker = ProgressTracker()
+        
+        # Record all symbols at G1 (Symbol Discovery)
+        for symbol in symbols:
+            self.progress_tracker.record_gate('G1', True)
+        
         opportunities = []
         evaluated_count = 0
         
         for symbol in symbols:
             try:
                 evaluated_count += 1
-                if evaluated_count % 25 == 0:
+                
+                # Render progress bars every 10 symbols
+                if evaluated_count % 10 == 0:
+                    self.progress_tracker.render_progress_bars()
                     print(f"Progress: {evaluated_count}/{len(symbols)} symbols evaluated")
                 
                 opportunity = self._evaluate_single_symbol(
@@ -606,6 +682,8 @@ class AutonomousDiscovery:
             except Exception as e:
                 continue  # Silent fail for autonomous operation
         
+        # Final progress bar render
+        self.progress_tracker.render_progress_bars()
         print(f"Completed evaluation. Found {len(opportunities)} qualifying opportunities.")
         return opportunities
     
@@ -660,44 +738,66 @@ class AutonomousDiscovery:
         Evaluate a single symbol completely autonomously
         """
         try:
-            # Get fundamental data
+            # G2: Get fundamental data
             fundamentals = data_fetcher.get_stock_fundamentals(symbol)
             if not fundamentals:
+                self.progress_tracker.record_gate('G2', False)
                 return None
-                
+            self.progress_tracker.record_gate('G2', True)
+            
+            # G3: Price Validation
             current_price = fundamentals.get('price', 0)
             if current_price <= 0:
+                self.progress_tracker.record_gate('G3', False)
                 return None
+            self.progress_tracker.record_gate('G3', True)
             
             # Determine if it's an opportunity
             is_opportunity = current_price <= 100.0  # Extended range
             is_penny_stock = (self.config.PENNY_STOCK_MIN_PRICE <= 
                             current_price <= self.config.PENNY_STOCK_MAX_PRICE)
             
-            # Get historical data
+            # G4: Get historical data
             historical_data = data_fetcher.get_historical_data(symbol, '3mo')
             if historical_data.empty:
+                self.progress_tracker.record_gate('G4', False)
+                return None
+            self.progress_tracker.record_gate('G4', True)
+            
+            # G5: Technical analysis
+            try:
+                technical_data = technical_analyzer.calculate_all_indicators(historical_data)
+                trend = technical_analyzer.identify_trend(technical_data)
+                momentum_score = technical_analyzer.calculate_momentum_score(technical_data)
+                technical_patterns = technical_analyzer.detect_technical_patterns(technical_data)
+                self.progress_tracker.record_gate('G5', True)
+            except Exception as e:
+                self.progress_tracker.record_gate('G5', False)
                 return None
             
-            # Technical analysis
-            technical_data = technical_analyzer.calculate_all_indicators(historical_data)
-            trend = technical_analyzer.identify_trend(technical_data)
-            momentum_score = technical_analyzer.calculate_momentum_score(technical_data)
-            technical_patterns = technical_analyzer.detect_technical_patterns(technical_data)
+            # G6: Catalyst analysis
+            try:
+                catalyst_score = catalyst_detector.calculate_catalyst_score(symbol, historical_data)
+                news_sentiment = catalyst_detector.analyze_news_sentiment(symbol)
+                self.progress_tracker.record_gate('G6', True)
+            except Exception as e:
+                self.progress_tracker.record_gate('G6', False)
+                return None
             
-            # Catalyst analysis
-            catalyst_score = catalyst_detector.calculate_catalyst_score(symbol, historical_data)
-            news_sentiment = catalyst_detector.analyze_news_sentiment(symbol)
-            
-            # Volume analysis
-            if len(historical_data) > 0:
-                current_volume = historical_data['Volume'].iloc[-1]
-                volume_analysis = catalyst_detector.detect_volume_anomalies(
-                    symbol, current_volume, historical_data
-                )
-                volume_ratio = volume_analysis.get('volume_ratio', 1.0)
-            else:
-                volume_ratio = 1.0
+            # G7: Volume analysis
+            try:
+                if len(historical_data) > 0:
+                    current_volume = historical_data['Volume'].iloc[-1]
+                    volume_analysis = catalyst_detector.detect_volume_anomalies(
+                        symbol, current_volume, historical_data
+                    )
+                    volume_ratio = volume_analysis.get('volume_ratio', 1.0)
+                else:
+                    volume_ratio = 1.0
+                self.progress_tracker.record_gate('G7', True)
+            except Exception as e:
+                self.progress_tracker.record_gate('G7', False)
+                return None
             
             # Apply learning insights
             learning_boost = 0.0
@@ -709,23 +809,46 @@ class AutonomousDiscovery:
                     if avg_perf > 0:  # Positive average return
                         learning_boost = min(avg_perf * 2, 0.3)  # Cap at 30% boost
             
-            # Calculate scores
-            confidence_score = self._calculate_confidence_score(
-                momentum_score, catalyst_score, volume_ratio, 
-                news_sentiment, trend, technical_patterns
-            )
+            # G8: Calculate scores
+            try:
+                confidence_score = self._calculate_confidence_score(
+                    momentum_score, catalyst_score, volume_ratio, 
+                    news_sentiment, trend, technical_patterns
+                )
+                
+                overall_score = self._calculate_overall_score(
+                    momentum_score, catalyst_score, confidence_score,
+                    is_penny_stock, technical_patterns, learning_boost
+                )
+                self.progress_tracker.record_gate('G8', True)
+            except Exception as e:
+                self.progress_tracker.record_gate('G8', False)
+                return None
             
-            overall_score = self._calculate_overall_score(
-                momentum_score, catalyst_score, confidence_score,
-                is_penny_stock, technical_patterns, learning_boost
-            )
+            # G9: Risk Assessment (Risk management calculations)
+            try:
+                stop_loss = risk_manager.calculate_stop_loss(current_price)
+                take_profit = risk_manager.calculate_take_profit(current_price, stop_loss)
+                risk_reward_ratio = risk_manager.calculate_risk_reward_ratio(
+                    current_price, stop_loss, take_profit
+                )
+                
+                # Validate risk parameters
+                if stop_loss <= 0 or take_profit <= 0 or risk_reward_ratio < 1.0:
+                    self.progress_tracker.record_gate('G9', False)
+                    return None
+                
+                self.progress_tracker.record_gate('G9', True)
+            except Exception as e:
+                self.progress_tracker.record_gate('G9', False)
+                return None
             
-            # Risk management
-            stop_loss = risk_manager.calculate_stop_loss(current_price)
-            take_profit = risk_manager.calculate_take_profit(current_price, stop_loss)
-            risk_reward_ratio = risk_manager.calculate_risk_reward_ratio(
-                current_price, stop_loss, take_profit
-            )
+            # G10: Final Position (Final validation based on overall score)
+            if overall_score <= 0.2:
+                self.progress_tracker.record_gate('G10', False)
+                return None
+            
+            self.progress_tracker.record_gate('G10', True)
             
             return {
                 'symbol': symbol,
