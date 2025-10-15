@@ -1,5 +1,4 @@
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -37,10 +36,10 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data files
-*.csv
-*.json
-!requirements.txt
+# Generated data files
+autonomous_ai_agent_report_*.csv
+historical_stocks.json
+stock_performance.json
 
 # Logs
 *.log
